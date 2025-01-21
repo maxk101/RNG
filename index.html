@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate a Random Number Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2C2C2C;
+      color: #FFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #game-container {
+      text-align: center;
+    }
+    #result {
+      font-size: 24px;
+      margin-top: 20px;
+      color: #AAA;
+      font-family: "Courier New", Courier, monospace;
+    }
+    #hold-button {
+      padding: 20px 40px;
+      font-size: 24px;
+      color: #FFF;
+      background-color: #555;
+      border: 4px solid #333;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #hold-button:active {
+      background-color: #666;
+      border-color: #444;
+      transform: scale(0.85) translateY(5px); /* Button shrinks more and goes down */
+    }
+    #hold-button:focus {
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <button id="hold-button">Generate a Random Number</button>
+    <div id="result">Result: 0.00000</div>
+  </div>
+
+
+  <script>
+    const button = document.getElementById('hold-button');
+    const resultDisplay = document.getElementById('result');
+    let cycleInterval; // Store the interval ID to clear it later
+
+
+    // Function to generate a random number using Web Crypto API
+    function generateRandomNumber() {
+      const array = new Uint32Array(2); // Generate a 2-element array to represent the integer and decimal parts
+      window.crypto.getRandomValues(array); // Populate array with secure random values
+
+
+      const integerPart = array[0] % 10000000 + 1; // Modulo to ensure it fits within the range
+      const decimalPart = array[1] % 100000 + 1; // Modulo to ensure it fits within the range
+
+
+      return `${integerPart}.${decimalPart.toString().padStart(5, '0')}`;
+    }
+
+
+    // Function to animate the random number generation smoothly with locking
+    function cycleNumbers() {
+      // Clear the previous interval to avoid overlapping intervals
+      if (cycleInterval) {
+        clearInterval(cycleInterval);
+      }
+
+
+      const finalNumber = generateRandomNumber();
+      const finalIntegerPart = finalNumber.split('.')[0];
+      const finalDecimalPart = finalNumber.split('.')[1];
+
+
+      let currentIntegerPart = "0000000";
+      let currentDecimalPart = "00000";
+
+
+      let lockedInteger = false;
+      let lockedDecimal = false;
+
+
+      let integerLockCount = 0;
+      let decimalLockCount = 0;
+
+
+      // Start the number rolling and locking animation
+      cycleInterval = setInterval(() => {
+        // Smooth transition for integer part
+        if (!lockedInteger) {
+          currentIntegerPart = Math.floor(Number(currentIntegerPart) + (parseInt(finalIntegerPart) - Number(currentIntegerPart)) / 10).toString();
+          if (currentIntegerPart === finalIntegerPart) {
+            lockedInteger = true;
+          }
+        }
+
+
+        // Smooth transition for decimal part
+        if (!lockedDecimal) {
+          currentDecimalPart = Math.floor(Number(currentDecimalPart) + (parseInt(finalDecimalPart) - Number(currentDecimalPart)) / 10).toString();
+          if (currentDecimalPart === finalDecimalPart) {
+            lockedDecimal = true;
+          }
+        }
+
+
+        // Locking the integer part faster (speed up locking)
+        if (!lockedInteger) {
+          let integerTemp = currentIntegerPart.split('');
+          if (integerLockCount < finalIntegerPart.length) {
+            // Speed up locking by incrementing more digits quickly
+            integerTemp[integerLockCount] = finalIntegerPart.charAt(integerLockCount);
+            currentIntegerPart = integerTemp.join('');
+            integerLockCount += 1; // Lock one more digit quickly
+          }
+        }
+
+
+        // Locking the decimal part faster (speed up locking)
+        if (!lockedDecimal) {
+          let decimalTemp = currentDecimalPart.split('');
+          if (decimalLockCount < finalDecimalPart.length) {
+            // Speed up locking by incrementing more digits quickly
+            decimalTemp[decimalLockCount] = finalDecimalPart.charAt(decimalLockCount);
+            currentDecimalPart = decimalTemp.join('');
+            decimalLockCount += 1; // Lock one more digit quickly
+          }
+        }
+
+
+        resultDisplay.textContent = `Result: ${currentIntegerPart}.${currentDecimalPart}`;
+
+
+        // Stop when both integer and decimal parts are fully locked
+        if (lockedInteger && lockedDecimal) {
+          clearInterval(cycleInterval);
+          resultDisplay.textContent = `Result: ${finalNumber}`;
+        }
+      }, 28); // Faster interval for quicker transitions and locking
+    }
+
+
+    // Click event to generate a random number and start animation
+    button.addEventListener('click', () => {
+      cycleNumbers();
+    });
+  </script>
+</body>
+</html>
